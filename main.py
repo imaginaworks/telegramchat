@@ -1,20 +1,10 @@
 from fastapi import FastAPI, Request
-import telegram
-import os
+from bot import handle_update
 
 app = FastAPI()
-TOKEN = os.getenv("TELEGRAM_TOKEN")
-bot = telegram.Bot(token=TOKEN)
 
-@app.post("/")
-async def receive_update(request: Request):
+@app.post("/webhook")
+async def webhook(request: Request):
     data = await request.json()
-
-    if "message" in data:
-        chat_id = data["message"]["chat"]["id"]
-        text = data["message"].get("text", "").lower()
-
-        if text == "hi":
-            await bot.send_message(chat_id=chat_id, text="ya saya disini")
-
-    return {"status": "ok"}
+    await handle_update(data)
+    return {"ok": True}
