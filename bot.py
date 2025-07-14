@@ -1,26 +1,31 @@
 import os
 import requests
-import asyncio
+from fastapi import Request, APIRouter
 
-BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+router = APIRouter()
+
+BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 BOT_API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
-async def handle_update(update):
-    message = update.get("message")
-    if not message:
-        return
+@router.post("/webhook")
+async def webhook(req: Request):
+    data = await req.json()
+    message = data.get("message", {})
 
-    chat_id = message["chat"]["id"]
-    text = message.get("text", "")
+    # Elak crash kalau tiada teks
+    chat_id = message.get("chat", {}).get("id")
+    text = message.get("text")
 
-    reply = f"Anda hantar: {text}"  # Sementara, belum guna GPT
+    if not chat_id or not text:
+        return {"ok": True}
 
-    await send_message(chat_id, reply)
+    print(f"📩 Mesej diterima: {text} dari {chat_id}")
+    balas(chat_id, f"Hai! Anda taip: {text}")
+    return {"ok": True}
 
-async def send_message(chat_id, text):
+def balas(chat_id, text):
     url = f"{BOT_API_URL}/sendMessage"
-    payload = {"chat_id": chat_id, "text": text}
     try:
-        requests.post(url, json=payload)
+        requests.post(url, json={"chat_id": chat_id, "text": text})
     except Exception as e:
-        print("Telegram Error:", e)
+        print("❌ Gagal hantar mesej:", e)
