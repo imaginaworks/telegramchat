@@ -1,10 +1,5 @@
-from fastapi import FastAPI, Request
-from bot import handle_update
+from fastapi import FastAPI
+from bot import router
 
 app = FastAPI()
-
-@app.post("/webhook")
-async def webhook(request: Request):
-    data = await request.json()
-    await handle_update(data)
-    return {"ok": True}
+app.include_router(router)
